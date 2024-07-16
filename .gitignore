@@ -1,0 +1,6 @@
+rcon-cli
+mcrcon/
+Level_sav_backup.zip
+logs/
+__pycache__/
+.env
