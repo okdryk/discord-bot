@@ -29,7 +29,7 @@ async def monitoring():
     if len(login_users)==0:
         count = get_no_login_users_count()
         global auto_stop_ec2_flag
-        if count>=10 and auto_stop_ec2_flag :
+        if count >= 10 and auto_stop_ec2_flag :
             set_no_login_users_count(0)
             channel = client.get_channel(int(os.environ['DISCORD_CHANNEL_ID']))
             await channel.send('10分以上ログインユーザーがいないため、サーバーを停止するよ')

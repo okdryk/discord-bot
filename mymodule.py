@@ -20,7 +20,7 @@ def connect_ssh():
     IP_ADDRESS = os.environ['AWS_EC2_INSTANCE_IP_ADRESS']
     PORT = '22'
     USER_NAME = 'ubuntu'
-    KEY = "/home/ryu/.ssh/aws.pem"
+    KEY = os.environ['KEY_RSA']
 
     clientPm = paramiko.SSHClient()
     clientPm.set_missing_host_key_policy(paramiko.WarningPolicy()) 
@@ -53,7 +53,8 @@ def check_ec2_instance_state():
     return state
 
 async def stop_pal_service(client):
-    run_subprocess(['./rcon-cli', '--host', os.environ['AWS_EC2_INSTANCE_IP_ADRESS'], '--password', 'pw','--port', '25575', 'save'])
+    run_subprocess(['./rcon-cli', '-a', os.environ['AWS_EC2_INSTANCE_IP_ADRESS']+":25575", '-p', os.environ['RCON_PASSWORD'], 'save'])
+    
     clientPm = connect_ssh()
     CMD = "sudo systemctl stop palworld.service"
     stdin, stdout, stderr = clientPm.exec_command(CMD)
@@ -64,17 +65,17 @@ async def stop_pal_service(client):
 
     # バックアップファイルをローカルにダウンロード
     sftp = clientPm.open_sftp()
-    sftp.get("/home/ubuntu/Level_sav_backup.zip", "/home/ryu/discord-bot/Level_sav_backup.zip")
+    sftp.get("/home/ubuntu/Level_sav_backup.zip", "/home/ubuntu/discord-bot/Level_sav_backup.zip")
     sftp.close()
 
     # Discord チャンネルにバックアップファイルをアップロード
     channel = client.get_channel(int(os.environ['DISCORD_CHANNEL_ID']))
-    await channel.send(file=discord.File("/home/ryu/discord-bot/Level_sav_backup.zip"))
+    await channel.send(file=discord.File("/home/ubuntu/discord-bot/Level_sav_backup.zip"))
 
     clientPm.close()
 
 def rcon_show_players():
-    return run_subprocess(['./rcon-cli', '--host', os.environ['AWS_EC2_INSTANCE_IP_ADRESS'], '--password', 'pw','--port', '25575', 'ShowPlayers'])
+    return run_subprocess(['./rcon-cli', '-a', os.environ['AWS_EC2_INSTANCE_IP_ADRESS']+"25575", '-p', os.environ['RCON_PASSWORD'], 'ShowPlayers'])
 
 def get_login_users():
     res = rcon_show_players()
