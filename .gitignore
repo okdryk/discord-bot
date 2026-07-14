@@ -1,6 +1,5 @@
-rcon-cli
-mcrcon/
-Level_sav_backup.zip
-logs/
 __pycache__/
-.env
+.venv/
+cdk.out/
+.pytest_cache/
+*.egg-info/

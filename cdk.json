@@ -1,0 +1,15 @@
+{
+  "app": "python3 app.py",
+  "watch": {
+    "include": ["**"],
+    "exclude": ["README.md", "cdk*.json", "requirements*.txt", "**/__pycache__", "tests", "plans", ".venv"]
+  },
+  "context": {
+    "instance_id": "REPLACE_WITH_PALWORLD_EC2_INSTANCE_ID",
+    "param_prefix": "/palworld",
+    "save_dir": "/home/ubuntu/Steam/steamapps/common/PalServer/Pal/Saved",
+    "service_name": "palworld",
+    "empty_minutes_to_stop": 10,
+    "memory_alert_percent": 80
+  }
+}
