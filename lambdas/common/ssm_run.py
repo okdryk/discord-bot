@@ -26,9 +26,10 @@ class SsmRunError(Exception):
 def run_shell(commands: list[str], timeout_seconds: int = 60) -> str:
     """EC2上でシェルコマンドを実行し、stdoutを返す。失敗時は SsmRunError。
 
-    AWS-RunShellScript は内部的に /bin/sh(dash) でコマンドを実行するため、
-    呼び出し側が `set -o pipefail` のようなbash専用構文を使えるように、
-    スクリプト全体を bash -c でラップして単一コマンドとして渡す。
+    AWS-RunShellScript は /bin/sh でコマンドを実行するため、shがdashの環境
+    (Ubuntu等)では `set -o pipefail` のようなbash専用構文が使えない。
+    呼び出し側がそれらを使えるように、スクリプト全体を bash -c でラップして
+    単一コマンドとして渡す。
     """
     client = ssm_client()
     script = "\n".join(commands)

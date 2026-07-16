@@ -13,6 +13,7 @@ from aws_cdk import (
 )
 from constructs import Construct
 
+
 class PalworldStack(Stack):
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
@@ -69,6 +70,9 @@ class PalworldStack(Stack):
             "SERVICE_NAME": service_name,
         }
 
+        # デプロイ時にCloudFormationが解決してLambda環境変数に埋め込む。
+        # この参照方式はSecureStringに非対応のため、パラメータはString型で
+        # 登録すること(Public Keyは公開情報なのでStringで問題ない)。
         discord_public_key = ssm.StringParameter.from_string_parameter_name(
             self, "DiscordPublicKeyParam", f"{param_prefix}/secrets/discord_public_key"
         ).string_value

@@ -22,6 +22,8 @@ EventBridge (rate 1 min)
   **SSM Run Command で EC2 上から `curl localhost:8212`** を実行する。8212ポートを外部公開せずに済み、
   SSHも不要(22番も閉じられる)。
 - 認証はすべてIAMロール(アクセスキー不使用)。シークレットは SSM Parameter Store (SecureString)。
+  Discord Public Key のみ公開情報のため String 型とし、デプロイ時に interactions Lambda の
+  環境変数に埋め込む(3秒応答制限内に収めるため、実行時のSSM取得を避ける)。
 - セーブデータのバックアップは停止時に zip 化して S3 へ保存(30日で自動削除)。
 
 ## コマンド
@@ -40,7 +42,11 @@ EventBridge (rate 1 min)
 ### 1. シークレットを Parameter Store に登録
 
 ```bash
-aws ssm put-parameter --name /palworld/secrets/discord_public_key --type SecureString \
+# Public Keyは公開情報なのでString型。CDKがデプロイ時に解決してLambda環境変数に
+# 埋め込むため、SecureStringにするとデプロイが失敗する。
+# 既にSecureStringで登録済みの場合は型変更できないため、delete-parameterで削除してから再作成する。
+# なお値はデプロイ時に固定されるため、Public Keyを変更した場合は再デプロイが必要
+aws ssm put-parameter --name /palworld/secrets/discord_public_key --type String \
   --value '<Discord Developer PortalのPublic Key>'
 aws ssm put-parameter --name /palworld/secrets/discord_bot_token --type SecureString \
   --value '<Botトークン>'

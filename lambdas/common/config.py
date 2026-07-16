@@ -17,7 +17,8 @@ MEMORY_ALERT_COOLDOWN_MINUTES = 30
 REST_API_PORT = 8212
 
 # シークレット (SecureString, 手動登録)
-PARAM_DISCORD_PUBLIC_KEY = f"{PARAM_PREFIX}/secrets/discord_public_key"
+# discord_public_key はString型で、CDKがデプロイ時に interactions Lambda の
+# 環境変数 DISCORD_PUBLIC_KEY に埋め込むため、ここには定義しない
 PARAM_DISCORD_BOT_TOKEN = f"{PARAM_PREFIX}/secrets/discord_bot_token"
 PARAM_DISCORD_WEBHOOK_URL = f"{PARAM_PREFIX}/secrets/discord_webhook_url"
 PARAM_ADMIN_PASSWORD = f"{PARAM_PREFIX}/secrets/admin_password"

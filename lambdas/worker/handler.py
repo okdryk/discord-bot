@@ -25,10 +25,14 @@ def handler(event, context):
     kind = event.get("kind")
 
     if kind == "auto_stop":
-        # 通知を先に送信(停止シーケンスに数分かかるため)
-        discord_api.post_channel_webhook(
-            f"⏰ {config.EMPTY_MINUTES_TO_STOP}分間プレイヤーがいないため自動停止します"
-        )
+        # 通知を先に送信(停止シーケンスに数分かかるため)。
+        # 通知に失敗しても停止は必ず実行する
+        try:
+            discord_api.post_channel_webhook(
+                f"⏰ {config.EMPTY_MINUTES_TO_STOP}分間プレイヤーがいないため自動停止します"
+            )
+        except Exception:
+            logger.exception("failed to post auto stop notice to Discord")
         lines = run_stop_sequence()
         if lines:
             try:

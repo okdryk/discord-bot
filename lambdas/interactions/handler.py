@@ -7,11 +7,12 @@ import base64
 import json
 import logging
 import os
+
 import boto3
 from nacl.exceptions import BadSignatureError
 from nacl.signing import VerifyKey
 
-from common import config, state
+from common import config
 
 logger = logging.getLogger(__name__)
 logging.getLogger().setLevel(logging.INFO)
