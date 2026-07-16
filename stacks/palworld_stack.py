@@ -9,9 +9,9 @@ from aws_cdk import (
     aws_lambda as lambda_,
     aws_logs as logs,
     aws_s3 as s3,
+    aws_ssm as ssm,
 )
 from constructs import Construct
-
 
 class PalworldStack(Stack):
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
@@ -69,6 +69,10 @@ class PalworldStack(Stack):
             "SERVICE_NAME": service_name,
         }
 
+        discord_public_key = ssm.StringParameter.from_string_parameter_name(
+            self, "DiscordPublicKeyParam", f"{param_prefix}/secrets/discord_public_key"
+        ).string_value
+
         def make_function(id_: str, handler: str, timeout: Duration, memory: int) -> lambda_.Function:
             return lambda_.Function(
                 self,
@@ -91,13 +95,14 @@ class PalworldStack(Stack):
             "WorkerFunction", "worker.handler.handler", Duration.minutes(15), 256
         )
         interactions = make_function(
-            "InteractionsFunction", "interactions.handler.handler", Duration.seconds(3), 128
+            "InteractionsFunction", "interactions.handler.handler", Duration.seconds(3), 256
         )
         monitor = make_function(
             "MonitorFunction", "monitor.handler.handler", Duration.minutes(3), 256
         )
 
         interactions.add_environment("WORKER_FUNCTION_NAME", worker.function_name)
+        interactions.add_environment("DISCORD_PUBLIC_KEY", discord_public_key)
         monitor.add_environment("WORKER_FUNCTION_NAME", worker.function_name)
 
         # --- IAM ---
@@ -121,7 +126,6 @@ class PalworldStack(Stack):
             actions=["cloudwatch:GetMetricStatistics"], resources=["*"]
         )
 
-        interactions.add_to_role_policy(read_params)
         worker.grant_invoke(interactions)
 
         worker.add_to_role_policy(

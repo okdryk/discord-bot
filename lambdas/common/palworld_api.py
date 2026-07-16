@@ -38,7 +38,7 @@ def get_players() -> list[dict]:
 
 
 def save() -> None:
-    _curl("save", method="POST", timeout=60)
+    _curl("save", method="POST", body={}, timeout=60)
 
 
 def announce(message: str) -> None:

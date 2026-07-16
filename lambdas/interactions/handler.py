@@ -6,7 +6,7 @@
 import base64
 import json
 import logging
-
+import os
 import boto3
 from nacl.exceptions import BadSignatureError
 from nacl.signing import VerifyKey
@@ -37,7 +37,7 @@ def lambda_client():
 def get_public_key() -> str:
     global _public_key
     if _public_key is None:
-        _public_key = state.get_secret(config.PARAM_DISCORD_PUBLIC_KEY)
+        _public_key = os.environ["DISCORD_PUBLIC_KEY"]
     return _public_key
 
 

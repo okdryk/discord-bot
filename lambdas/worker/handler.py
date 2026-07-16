@@ -25,9 +25,16 @@ def handler(event, context):
     kind = event.get("kind")
 
     if kind == "auto_stop":
-        lines = [f"⏰ {config.EMPTY_MINUTES_TO_STOP}分間プレイヤーがいないため自動停止します"]
-        lines += run_stop_sequence()
-        discord_api.post_channel_webhook("\n".join(lines))
+        # 通知を先に送信(停止シーケンスに数分かかるため)
+        discord_api.post_channel_webhook(
+            f"⏰ {config.EMPTY_MINUTES_TO_STOP}分間プレイヤーがいないため自動停止します"
+        )
+        lines = run_stop_sequence()
+        if lines:
+            try:
+                discord_api.post_channel_webhook("\n".join(lines))
+            except Exception:
+                logger.exception("failed to post stop sequence results to Discord")
         return
 
     if kind != "command":

@@ -1,5 +1,6 @@
 """SSM Run Command でパルワールド用EC2上のシェルコマンドを実行する。"""
 import logging
+import shlex
 import time
 
 import boto3
@@ -23,12 +24,20 @@ class SsmRunError(Exception):
 
 
 def run_shell(commands: list[str], timeout_seconds: int = 60) -> str:
-    """EC2上でシェルコマンドを実行し、stdoutを返す。失敗時は SsmRunError。"""
+    """EC2上でシェルコマンドを実行し、stdoutを返す。失敗時は SsmRunError。
+
+    AWS-RunShellScript は内部的に /bin/sh(dash) でコマンドを実行するため、
+    呼び出し側が `set -o pipefail` のようなbash専用構文を使えるように、
+    スクリプト全体を bash -c でラップして単一コマンドとして渡す。
+    """
     client = ssm_client()
+    script = "\n".join(commands)
+    wrapped_commands = ["bash -c " + shlex.quote(script)]
+
     response = client.send_command(
         InstanceIds=[config.INSTANCE_ID],
         DocumentName="AWS-RunShellScript",
-        Parameters={"commands": commands, "executionTimeout": [str(timeout_seconds)]},
+        Parameters={"commands": wrapped_commands, "executionTimeout": [str(timeout_seconds)]},
     )
     command_id = response["Command"]["CommandId"]
 

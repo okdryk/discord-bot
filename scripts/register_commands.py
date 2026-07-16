@@ -90,6 +90,7 @@ def main() -> None:
         headers={
             "Authorization": f"Bot {get_bot_token(args.param_prefix)}",
             "Content-Type": "application/json",
+            "User-Agent": "DiscordBot (https://github.com/yourname/discord-bot, 1.0)",
         },
     )
     with urllib.request.urlopen(request) as response:
