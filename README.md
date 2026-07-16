@@ -35,6 +35,7 @@ EventBridge (rate 1 min)
 | `/palworld restart` | セーブしてEC2再起動(メモリ逼迫時など) |
 | `/palworld status` | EC2状態・プレイヤー一覧・メモリ使用率・自動停止設定 |
 | `/palworld backup` | 停止せずセーブデータをS3にバックアップ |
+| `/palworld update` | セーブ → サービス停止 → steamcmdで本体更新 → サービス起動(クライアント更新後のバージョン不一致対応) |
 | `/palworld autostop mode:<on\|off>` | 無人時自動停止のON/OFF |
 
 ## セットアップ
@@ -63,6 +64,10 @@ aws ssm put-parameter --name /palworld/secrets/admin_password --type SecureStrin
 - `instance_id`: パルワールド用EC2のインスタンスID
 - `save_dir`: セーブディレクトリ(デフォルト: `/home/ubuntu/Steam/steamapps/common/PalServer/Pal/Saved`)
 - `service_name`: systemdサービス名(デフォルト: `palworld`)
+- `steamcmd_dir`: steamcmd.sh のあるディレクトリ(デフォルト: `/home/ubuntu/.steam/steam/steamcmd`)
+- `server_install_dir`: サーバー本体のインストール先。systemdサービスが起動する実体と一致させること
+  (デフォルト: `/home/ubuntu/Steam/steamapps/common/PalServer`)
+- `server_user`: steamcmdを実行するEC2上のユーザー(デフォルト: `ubuntu`)
 - `empty_minutes_to_stop` / `memory_alert_percent`: 自動停止・警告のしきい値
 
 ### 3. デプロイ

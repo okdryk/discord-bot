@@ -23,13 +23,23 @@ class SsmRunError(Exception):
     pass
 
 
-def run_shell(commands: list[str], timeout_seconds: int = 60) -> str:
+class SsmRunTimeout(SsmRunError):
+    """ポーリング期限内に完了しなかった。コマンド自体はEC2上で継続している可能性がある。"""
+
+
+def run_shell(
+    commands: list[str], timeout_seconds: int = 60, execution_timeout: int | None = None
+) -> str:
     """EC2上でシェルコマンドを実行し、stdoutを返す。失敗時は SsmRunError。
 
     AWS-RunShellScript は /bin/sh でコマンドを実行するため、shがdashの環境
     (Ubuntu等)では `set -o pipefail` のようなbash専用構文が使えない。
     呼び出し側がそれらを使えるように、スクリプト全体を bash -c でラップして
     単一コマンドとして渡す。
+
+    execution_timeout はEC2側の実行打ち切り秒数(省略時は timeout_seconds)。
+    timeout_seconds より大きくすると、Lambdaが待ちきれず SsmRunTimeout に
+    なってもコマンドはEC2上で完走する(長時間処理の投げっぱなしに使える)。
     """
     client = ssm_client()
     script = "\n".join(commands)
@@ -38,7 +48,10 @@ def run_shell(commands: list[str], timeout_seconds: int = 60) -> str:
     response = client.send_command(
         InstanceIds=[config.INSTANCE_ID],
         DocumentName="AWS-RunShellScript",
-        Parameters={"commands": wrapped_commands, "executionTimeout": [str(timeout_seconds)]},
+        Parameters={
+            "commands": wrapped_commands,
+            "executionTimeout": [str(execution_timeout or timeout_seconds)],
+        },
     )
     command_id = response["Command"]["CommandId"]
 
@@ -61,4 +74,4 @@ def run_shell(commands: list[str], timeout_seconds: int = 60) -> str:
             f"SSMコマンドが{status}: "
             f"{invocation.get('StandardErrorContent', '')[:500] or invocation.get('StandardOutputContent', '')[:500]}"
         )
-    raise SsmRunError(f"SSMコマンドが{timeout_seconds}秒以内に完了しませんでした")
+    raise SsmRunTimeout(f"SSMコマンドが{timeout_seconds}秒以内に完了しませんでした")

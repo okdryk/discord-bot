@@ -9,6 +9,9 @@
     "param_prefix": "/palworld",
     "save_dir": "/home/ubuntu/Steam/steamapps/common/PalServer/Pal/Saved",
     "service_name": "palworld",
+    "steamcmd_dir": "/home/ubuntu/.steam/steam/steamcmd",
+    "server_install_dir": "/home/ubuntu/Steam/steamapps/common/PalServer",
+    "server_user": "ubuntu",
     "empty_minutes_to_stop": 10,
     "memory_alert_percent": 80
   }

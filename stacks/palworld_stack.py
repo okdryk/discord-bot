@@ -24,6 +24,14 @@ class PalworldStack(Stack):
         memory_percent = str(self.node.try_get_context("memory_alert_percent") or 80)
         save_dir = self.node.try_get_context("save_dir") or ""
         service_name = self.node.try_get_context("service_name") or "palworld"
+        steamcmd_dir = (
+            self.node.try_get_context("steamcmd_dir") or "/home/ubuntu/.steam/steam/steamcmd"
+        )
+        server_install_dir = (
+            self.node.try_get_context("server_install_dir")
+            or "/home/ubuntu/Steam/steamapps/common/PalServer"
+        )
+        server_user = self.node.try_get_context("server_user") or "ubuntu"
         if not instance_id or instance_id.startswith("REPLACE_"):
             raise ValueError(
                 "cdk.json の context.instance_id にパルワールド用EC2のインスタンスIDを設定してください"
@@ -68,6 +76,9 @@ class PalworldStack(Stack):
             "MEMORY_ALERT_PERCENT": memory_percent,
             "SAVE_DIR": save_dir,
             "SERVICE_NAME": service_name,
+            "STEAMCMD_DIR": steamcmd_dir,
+            "SERVER_INSTALL_DIR": server_install_dir,
+            "SERVER_USER": server_user,
         }
 
         # デプロイ時にCloudFormationが解決してLambda環境変数に埋め込む。
@@ -98,6 +109,9 @@ class PalworldStack(Stack):
         worker = make_function(
             "WorkerFunction", "worker.handler.handler", Duration.minutes(15), 256
         )
+        # コマンドは失敗を自身でDiscordへ報告するため、非同期Invokeの自動リトライは
+        # 二重実行(update中のsteamcmd並走・通知重複)の害しかない
+        worker.configure_async_invoke(retry_attempts=0)
         interactions = make_function(
             "InteractionsFunction", "interactions.handler.handler", Duration.seconds(3), 256
         )

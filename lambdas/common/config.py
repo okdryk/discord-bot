@@ -9,6 +9,12 @@ AWS_REGION = os.environ.get("AWS_REGION", "ap-northeast-1")
 
 SAVE_DIR = os.environ.get("SAVE_DIR", "")
 SERVICE_NAME = os.environ.get("SERVICE_NAME", "palworld")
+STEAMCMD_DIR = os.environ.get("STEAMCMD_DIR", "/home/ubuntu/.steam/steam/steamcmd")
+SERVER_INSTALL_DIR = os.environ.get(
+    "SERVER_INSTALL_DIR", "/home/ubuntu/Steam/steamapps/common/PalServer"
+)
+SERVER_USER = os.environ.get("SERVER_USER", "ubuntu")
+PALWORLD_APP_ID = "2394010"  # Steam上のPalworld Dedicated ServerのApp ID
 
 EMPTY_MINUTES_TO_STOP = int(os.environ.get("EMPTY_MINUTES_TO_STOP", "10"))
 MEMORY_ALERT_PERCENT = float(os.environ.get("MEMORY_ALERT_PERCENT", "80"))

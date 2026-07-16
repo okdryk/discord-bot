@@ -40,6 +40,11 @@ COMMANDS = [
             },
             {
                 "type": SUB_COMMAND,
+                "name": "update",
+                "description": "steamcmdでゲームサーバー本体をアップデートする",
+            },
+            {
+                "type": SUB_COMMAND,
                 "name": "autostop",
                 "description": "無人時の自動停止のON/OFFを切り替える",
                 "options": [

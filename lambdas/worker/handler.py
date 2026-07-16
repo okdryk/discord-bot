@@ -156,6 +156,77 @@ def cmd_backup(options: dict) -> str:
     return f"✅ バックアップ完了: `s3://{config.BACKUP_BUCKET}/{key}`"
 
 
+def cmd_update(options: dict) -> str:
+    """steamcmdでゲームサーバー本体を更新する(クライアント更新後のバージョン不一致対応)。
+
+    停止→更新→起動は1本のSSMスクリプトとして実行し、trapで起動を保証する。
+    SSMコマンドはLambdaより長く生きられるため、Lambdaが待ちきれず終了しても
+    EC2上で完走してサービスは自動復帰する(停止したまま放置される経路がない)。
+    """
+    info = ec2_control.describe()
+    if info["state"] != "running":
+        return (
+            f"⚠️ サーバーが起動していません (EC2: {info['state']})。"
+            "`/palworld start` してから実行してください"
+        )
+
+    lines = []
+    try:
+        palworld_api.announce("サーバーを更新するため一時停止します")
+    except Exception:
+        lines.append("⚠️ アナウンス失敗(続行)")
+
+    try:
+        palworld_api.save()
+        lines.append("✅ セーブ完了")
+    except Exception:
+        lines.append("⚠️ セーブできませんでした(続行)")
+
+    state.set_empty_since(None)  # 更新完了直後に自動停止が発動しないようリセット
+
+    # - 停止に失敗したら何もせず中止(サービスは動いたまま)
+    # - 停止後はtrapにより、steamcmdの成否・中断・SSMのタイムアウトTERMに
+    #   かかわらずサービス起動を試みる
+    # - スクリプトの終了コードはpipefailによりsteamcmdの成否を反映する
+    # - steamcmdの進捗出力は長大でSSMの出力上限で切れるため末尾だけ返す
+    script = [
+        "set -u -o pipefail",
+        f"sudo systemctl stop {config.SERVICE_NAME} || exit 1",
+        f'trap "sudo systemctl start {config.SERVICE_NAME}" EXIT TERM',
+        (
+            f'sudo -u {config.SERVER_USER} -H "{config.STEAMCMD_DIR}/steamcmd.sh"'
+            f' +force_install_dir "{config.SERVER_INSTALL_DIR}"'
+            f" +login anonymous +app_update {config.PALWORLD_APP_ID} validate +quit"
+            " | tail -n 20"
+        ),
+    ]
+    try:
+        output = ssm_run.run_shell(script, timeout_seconds=540, execution_timeout=3600)
+    except ssm_run.SsmRunTimeout:
+        lines.append(
+            "⏳ アップデートが時間内に完了しませんでした。EC2上で継続中のため、"
+            "完了後に自動でゲームサーバーが起動します。"
+            "しばらくしてから `/palworld status` で確認してください"
+        )
+        return "\n".join(lines)
+    except Exception as error:
+        logger.exception("steamcmd update failed")
+        lines.append(f"⚠️ アップデート失敗(再実行すると続きから再開されます): {error}")
+    else:
+        if "fully installed" in output:
+            lines.append("✅ アップデート完了")
+        else:
+            lines.append(f"⚠️ アップデート結果を確認できませんでした: {output.strip()[-300:]}")
+
+    if wait_for_api(max_wait_seconds=120):
+        lines.append("✅ ゲームサーバー起動完了!")
+    else:
+        lines.append(
+            "⚠️ ゲームサーバーの応答をまだ確認できていません。`/palworld status` で確認してください"
+        )
+    return "\n".join(lines)
+
+
 COMMANDS = {
     "start": cmd_start,
     "stop": cmd_stop,
@@ -163,6 +234,7 @@ COMMANDS = {
     "status": cmd_status,
     "autostop": cmd_autostop,
     "backup": cmd_backup,
+    "update": cmd_update,
 }
 
 
